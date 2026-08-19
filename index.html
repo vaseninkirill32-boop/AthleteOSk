@@ -1,0 +1,2003 @@
+```
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Athlete OS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+button,input,select,textarea{font-family:inherit;font-size:inherit}
+:root{
+  --bg:#0D0D0D;--surface:#111111;--elevated:#161616;--hover:#1A1A1A;--active:#1E1E1E;
+  --border:#1F1F1F;--border-2:#2A2A2A;--border-3:#333333;
+  --t1:#EDEDED;--t2:#999999;--t3:#555555;--t4:#333333;
+  --accent:#5B6AD0;--accent-dim:rgba(91,106,208,0.12);--accent-border:rgba(91,106,208,0.3);
+  --green:#3D8B62;--green-dim:rgba(61,139,98,0.1);--red:#C0392B;--amber:#B07D30;
+  --sans:'Inter',-apple-system,sans-serif;--mono:'JetBrains Mono','Fira Code',monospace;
+  --r:5px;
+}
+html,body{height:100%;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--t1);font-family:var(--sans);font-size:13px;line-height:1.5;overflow-x:hidden}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:2px}
+
+/* ── AUTH SCREEN ─────────────────────────────────────────────────────── */
+#auth-screen{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;
+}
+#auth-screen.hidden{display:none}
+.auth-box{
+  width:380px;max-width:calc(100vw - 32px);
+  border:1px solid var(--border-2);border-radius:8px;
+  background:var(--surface);overflow:hidden;
+}
+.auth-logo{
+  padding:28px 28px 24px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.auth-logo-mark{
+  width:26px;height:26px;background:var(--accent);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.auth-logo-name{font-size:15px;font-weight:600;color:var(--t1)}
+.auth-body{padding:24px 28px}
+.auth-title{font-size:17px;font-weight:600;color:var(--t1);margin-bottom:4px}
+.auth-sub{font-size:13px;color:var(--t3);margin-bottom:22px}
+.auth-tabs{display:flex;border:1px solid var(--border-2);border-radius:var(--r);overflow:hidden;margin-bottom:20px}
+.auth-tab{
+  flex:1;padding:7px;text-align:center;cursor:pointer;
+  font-size:12px;font-weight:500;color:var(--t3);
+  transition:all 0.1s;background:transparent;border:none;
+}
+.auth-tab.active{background:var(--elevated);color:var(--t1)}
+.field{margin-bottom:14px}
+.field-label{display:block;font-size:12px;color:var(--t2);margin-bottom:5px;font-weight:500}
+.field-input,.field-select{
+  width:100%;background:var(--elevated);border:1px solid var(--border-2);
+  border-radius:var(--r);color:var(--t1);padding:9px 11px;
+  outline:none;transition:border-color 0.1s;
+}
+.field-input:focus,.field-select:focus{border-color:var(--accent)}
+.field-input::placeholder{color:var(--t3)}
+.field-input.err{border-color:var(--red)}
+.field-hint{font-size:11px;color:var(--t3);margin-top:4px}
+.field-hint.err-msg{color:var(--red)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px 16px;font-size:13px;font-weight:500;border-radius:var(--r);
+  cursor:pointer;transition:all 0.1s;border:none;outline:none;
+}
+.btn-primary{background:var(--t1);color:var(--bg)}
+.btn-primary:hover{background:#ccc}
+.btn-ghost{background:transparent;color:var(--t2);border:1px solid var(--border-2)}
+.btn-ghost:hover{background:var(--hover);color:var(--t1);border-color:var(--border-3)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-full{width:100%;justify-content:center}
+.auth-footer{font-size:12px;color:var(--t3);text-align:center;margin-top:14px}
+.auth-footer span{color:var(--accent);cursor:pointer}
+.auth-footer span:hover{text-decoration:underline}
+.auth-error{
+  background:rgba(192,57,43,0.1);border:1px solid rgba(192,57,43,0.3);
+  border-radius:var(--r);padding:9px 12px;font-size:12px;color:#e57373;
+  margin-bottom:14px;display:none;
+}
+.auth-error.show{display:block}
+.onboard-step{display:none}
+.onboard-step.active{display:block}
+.onboard-progress{
+  display:flex;gap:4px;margin-bottom:20px;
+}
+.ob-dot{flex:1;height:2px;border-radius:1px;background:var(--border-2)}
+.ob-dot.done{background:var(--accent)}
+
+/* ── APP ─────────────────────────────────────────────────────────────── */
+#app{display:none}
+#app.show{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ─────────────────────────────────────────────────────────── */
+.sidebar{
+  width:220px;flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  position:fixed;inset:0 auto 0 0;z-index:50;
+}
+.sidebar-logo{
+  height:52px;display:flex;align-items:center;gap:9px;
+  padding:0 16px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.logo-mark{
+  width:22px;height:22px;background:var(--accent);border-radius:4px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.logo-name{font-size:13px;font-weight:600;color:var(--t1);letter-spacing:-0.2px}
+.logo-ver{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--t3)}
+.sidebar-nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-group-label{
+  font-family:var(--mono);font-size:10px;color:var(--t3);
+  letter-spacing:0.5px;padding:12px 16px 4px;text-transform:uppercase;
+}
+.nav-item{
+  display:flex;align-items:center;gap:8px;padding:6px 16px;
+  cursor:pointer;color:var(--t2);font-size:13px;font-weight:400;
+  transition:color 0.1s,background 0.1s;border-left:2px solid transparent;margin:1px 0;
+}
+.nav-item:hover{background:var(--hover);color:var(--t1)}
+.nav-item.active{background:var(--active);color:var(--t1);border-left-color:var(--accent);font-weight:500}
+.nav-item svg{width:15px;height:15px;opacity:0.6;flex-shrink:0}
+.nav-item.active svg{opacity:1}
+.nav-badge{
+  margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--t3);
+  background:var(--elevated);border:1px solid var(--border-2);padding:1px 6px;border-radius:3px;
+}
+.sidebar-user{
+  border-top:1px solid var(--border);padding:12px 16px;
+  display:flex;align-items:center;gap:10px;cursor:pointer;
+  transition:background 0.1s;position:relative;
+}
+.sidebar-user:hover{background:var(--hover)}
+.avatar{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--accent-dim);border:1px solid var(--accent-border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:600;color:var(--accent);flex-shrink:0;
+}
+.u-name{font-size:12px;font-weight:500;color:var(--t1)}
+.u-level{font-family:var(--mono);font-size:10px;color:var(--t3)}
+.user-menu{
+  position:absolute;bottom:52px;left:8px;right:8px;
+  background:var(--elevated);border:1px solid var(--border-2);
+  border-radius:var(--r);overflow:hidden;display:none;z-index:100;
+}
+.user-menu.open{display:block}
+.user-menu-item{
+  padding:9px 14px;font-size:13px;color:var(--t2);cursor:pointer;
+  transition:all 0.1s;display:flex;align-items:center;gap:8px;
+}
+.user-menu-item:hover{background:var(--hover);color:var(--t1)}
+.user-menu-item.danger{color:#e57373}
+.user-menu-item.danger:hover{background:rgba(192,57,43,0.08)}
+
+/* ── MAIN ─────────────────────────────────────────────────────────────── */
+.main{margin-left:220px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{
+  height:52px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 28px;gap:16px;
+  flex-shrink:0;background:var(--surface);position:sticky;top:0;z-index:40;
+}
+.topbar-title{font-size:13px;font-weight:500;color:var(--t1)}
+.topbar-sep{color:var(--t4)}
+.topbar-sub{font-size:13px;color:var(--t2)}
+.topbar-date{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--t3)}
+.content{padding:28px;flex:1}
+
+/* ── GRID & CARDS ─────────────────────────────────────────────────────── */
+.grid{display:grid;gap:1px;background:var(--border)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.gg{background:transparent;gap:12px}
+.card{background:var(--surface);padding:20px}
+.card-sm{padding:16px}
+.card-bd{border:1px solid var(--border);border-radius:var(--r)}
+.kpi-label{font-family:var(--mono);font-size:10px;color:var(--t3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px}
+.kpi-value{font-size:26px;font-weight:600;color:var(--t1);letter-spacing:-.8px;line-height:1}
+.kpi-unit{font-size:13px;font-weight:400;color:var(--t3);margin-left:2px}
+.kpi-delta{margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--t3);display:flex;align-items:center;gap:4px}
+.kpi-delta.up{color:var(--green)}.kpi-delta.dn{color:var(--red)}
+
+/* ── SCORE ─────────────────────────────────────────────────────────────── */
+.score-number{font-size:52px;font-weight:300;letter-spacing:-3px;color:var(--t1);line-height:1}
+.score-number em{font-size:18px;font-style:normal;font-weight:400;color:var(--t3);letter-spacing:0;margin-left:4px}
+.score-status-badge{font-family:var(--mono);font-size:10px;color:var(--green);background:var(--green-dim);border:1px solid rgba(61,139,98,0.2);padding:3px 8px;border-radius:3px}
+.score-bar-bg{height:2px;background:var(--border-2);border-radius:1px;overflow:hidden;margin:14px 0}
+.score-bar-fill{height:100%;background:var(--accent);border-radius:1px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.score-factors{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.sf{padding:10px 12px;border-right:1px solid var(--border)}.sf:last-child{border-right:none}
+.sf-name{font-size:11px;color:var(--t3);margin-bottom:4px}
+.sf-val{font-family:var(--mono);font-size:13px;color:var(--t1);font-weight:500}
+.sf-bar{margin-top:6px;height:2px;background:var(--border-2);border-radius:1px;overflow:hidden}
+.sf-bar-fill{height:100%;background:var(--accent);border-radius:1px}
+.xp-section{margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.xp-meta{display:flex;justify-content:space-between;margin-bottom:6px}
+.xp-label{font-size:11px;color:var(--t2)}.xp-pts{font-family:var(--mono);font-size:10px;color:var(--t3)}
+.xp-track{height:2px;background:var(--border-2);border-radius:1px;overflow:hidden}
+.xp-fill{height:100%;background:var(--accent);border-radius:1px;transition:width 1s ease}
+
+/* ── WEEK ─────────────────────────────────────────────────────────────── */
+.week-grid{display:flex;gap:4px;align-items:flex-end;height:56px}
+.week-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+.week-bar-track{flex:1;width:100%;background:var(--elevated);border:1px solid var(--border);border-radius:2px;position:relative;overflow:hidden}
+.week-bar-prog{position:absolute;bottom:0;left:0;right:0;background:var(--border-3);border-radius:2px 2px 0 0;transition:height .6s ease}
+.week-col.trained .week-bar-prog{background:var(--accent)}
+.week-lbl{font-family:var(--mono);font-size:9px;color:var(--t3);text-transform:uppercase}
+.week-col.today .week-lbl{color:var(--accent)}
+.stats-strip{display:flex;border-top:1px solid var(--border);margin-top:16px;padding-top:14px;gap:24px}
+.ss-val{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--t1)}
+.ss-label{font-size:11px;color:var(--t3);margin-top:1px}
+
+/* ── EXERCISES ─────────────────────────────────────────────────────────── */
+.exercise-table{width:100%}
+.exercise-table tr{border-bottom:1px solid var(--border)}
+.exercise-table tr:last-child{border-bottom:none}
+.exercise-table td{padding:9px 0;vertical-align:middle}
+.ex-num{font-family:var(--mono);font-size:10px;color:var(--t4);width:22px}
+.ex-name-cell{font-size:13px;color:var(--t1)}
+.ex-sets-cell{font-family:var(--mono);font-size:11px;color:var(--t3);text-align:right;padding-right:12px}
+.ex-check{
+  width:16px;height:16px;border:1px solid var(--border-2);border-radius:3px;
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+  transition:all 0.1s;background:transparent;padding:0;
+}
+.ex-check:hover{border-color:var(--border-3);background:var(--hover)}
+.ex-check.done{background:var(--accent);border-color:var(--accent)}
+.ex-check.done svg{display:block}.ex-check svg{display:none}
+.workout-footer{display:flex;gap:0;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.wf-stat{flex:1}.wf-num{font-family:var(--mono);font-size:16px;color:var(--t1);font-weight:500}
+.wf-lbl{font-size:11px;color:var(--t3);margin-top:1px}
+
+/* ── HABITS ─────────────────────────────────────────────────────────────── */
+.habit-row{
+  display:flex;align-items:center;gap:10px;padding:9px 0;
+  border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;
+}
+.habit-row:last-child{border-bottom:none}
+.habit-row:hover{margin:0 -20px;padding:9px 20px;background:var(--hover)}
+.habit-icon-wrap{
+  width:26px;height:26px;border:1px solid var(--border-2);border-radius:4px;
+  display:flex;align-items:center;justify-content:center;color:var(--t3);flex-shrink:0;transition:all 0.1s;
+}
+.habit-row.done .habit-icon-wrap{border-color:var(--accent-border);color:var(--accent);background:var(--accent-dim)}
+.habit-name{font-size:13px;color:var(--t1)}.habit-streak{font-family:var(--mono);font-size:10px;color:var(--t3);margin-top:1px}
+.habit-check{width:14px;height:14px;border:1px solid var(--border-2);border-radius:3px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.1s}
+.habit-row.done .habit-check{background:var(--accent);border-color:var(--accent)}
+.hcb-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.hcb-label{font-size:11px;color:var(--t3)}.hcb-val{font-family:var(--mono);font-size:11px;color:var(--t2)}
+.hcb-track{height:2px;background:var(--border-2);border-radius:1px;overflow:hidden}
+.hcb-fill{height:100%;background:var(--accent);border-radius:1px;transition:width .4s ease}
+.habits-full-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.hfc{background:var(--surface);padding:16px;cursor:pointer;transition:background 0.1s}
+.hfc:hover{background:var(--hover)}.hfc.done{background:var(--elevated)}
+.hfc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.hfc-icon{width:28px;height:28px;border:1px solid var(--border-2);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--t3)}
+.hfc.done .hfc-icon{border-color:var(--accent-border);color:var(--accent);background:var(--accent-dim)}
+.hfc-check{width:14px;height:14px;border:1px solid var(--border-2);border-radius:3px;display:flex;align-items:center;justify-content:center}
+.hfc.done .hfc-check{background:var(--accent);border-color:var(--accent)}
+.hfc-name{font-size:13px;font-weight:500;color:var(--t1);margin-bottom:3px}
+.hfc-type{font-family:var(--mono);font-size:10px;color:var(--t3);text-transform:uppercase}
+.hfc-streak{font-family:var(--mono);font-size:11px;color:var(--t2);margin-top:10px}
+
+/* ── RECORDS ─────────────────────────────────────────────────────────────── */
+.rec-table{width:100%;border-collapse:collapse}
+.rec-table tr{border-bottom:1px solid var(--border)}
+.rec-table tr:last-child{border-bottom:none}
+.rec-table td{padding:10px 0;vertical-align:middle}
+.rec-name{font-size:13px;color:var(--t1)}.rec-val{font-family:var(--mono);font-size:13px;color:var(--t1);text-align:right;padding-right:10px}
+.rec-badge{font-family:var(--mono);font-size:9px;color:var(--accent);background:var(--accent-dim);border:1px solid var(--accent-border);padding:2px 5px;border-radius:3px}
+
+/* ── TABS ─────────────────────────────────────────────────────────────── */
+.tabs-row{display:flex;border-bottom:1px solid var(--border);margin-bottom:24px}
+.tab-btn{
+  font-size:13px;color:var(--t3);padding:10px 16px;cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:color 0.1s;
+  background:none;border-top:none;border-left:none;border-right:none;
+}
+.tab-btn:hover{color:var(--t2)}.tab-btn.active{color:var(--t1);border-bottom-color:var(--accent);font-weight:500}
+.tab-pane{display:none}.tab-pane.active{display:block}
+
+/* ── EXERCISE CARDS ─────────────────────────────────────────────────────── */
+.ex-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;transition:border-color .1s}
+.ex-card:hover{border-color:var(--border-2)}
+.ex-card-muscle{font-family:var(--mono);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px}
+.ex-card-name{font-size:13px;font-weight:500;color:var(--t1);margin-bottom:10px}
+.ex-card-foot{display:flex;justify-content:space-between;align-items:center}
+.ex-card-type{font-family:var(--mono);font-size:10px;color:var(--t4)}
+.ex-card-pr{font-family:var(--mono);font-size:11px;color:var(--t2)}
+
+/* ── PLAN CARD ─────────────────────────────────────────────────────────── */
+.plan-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.plan-head{padding:14px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.plan-name{font-size:13px;font-weight:500;color:var(--t1)}
+.plan-tag{font-family:var(--mono);font-size:10px;color:var(--t3);background:var(--elevated);border:1px solid var(--border-2);padding:2px 7px;border-radius:3px}
+.plan-ex-row{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border)}
+.plan-ex-row:last-child{border-bottom:none}
+.plan-ex-i{font-family:var(--mono);font-size:10px;color:var(--t4);width:16px}
+.plan-ex-n{font-size:13px;color:var(--t2);flex:1}.plan-ex-s{font-family:var(--mono);font-size:11px;color:var(--t3)}
+.plan-foot{padding:12px 16px;border-top:1px solid var(--border)}
+
+/* ── HISTORY ─────────────────────────────────────────────────────────────── */
+.hist-table{width:100%;border-collapse:collapse}
+.hist-table th{font-family:var(--mono);font-size:10px;color:var(--t3);font-weight:400;text-align:left;text-transform:uppercase;letter-spacing:.3px;padding:0 0 10px;border-bottom:1px solid var(--border)}
+.hist-table th:not(:first-child){padding-left:16px}
+.hist-table td{padding:11px 0;border-bottom:1px solid var(--border);vertical-align:middle;font-size:13px;color:var(--t2)}
+.hist-table td:not(:first-child){padding-left:16px}
+.hist-table tr:last-child td{border-bottom:none}
+.hist-table tr:hover td{color:var(--t1)}
+.hist-date-cell{font-family:var(--mono);font-size:11px;color:var(--t3);white-space:nowrap}
+.hist-name-cell{font-weight:500;color:var(--t1)}.hist-num-cell{font-family:var(--mono);font-size:12px}
+
+/* ── CHART ─────────────────────────────────────────────────────────────── */
+.chart-svg{width:100%;overflow:visible;display:block}
+
+/* ── MEASUREMENTS ─────────────────────────────────────────────────────── */
+.meas-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.meas-cell{padding:14px 16px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.meas-cell:nth-child(4n){border-right:none}
+.meas-cell:nth-last-child(-n+4){border-bottom:none}
+.meas-label{font-family:var(--mono);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px}
+.meas-val{font-size:20px;font-weight:600;letter-spacing:-.5px;color:var(--t1)}
+.meas-unit{font-size:12px;font-weight:400;color:var(--t3);margin-left:2px}
+
+/* ── AI ─────────────────────────────────────────────────────────────────── */
+.ai-callout{border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:flex;gap:12px;align-items:flex-start;background:var(--elevated);margin-top:12px}
+.ai-icon{font-family:var(--mono);font-size:10px;color:var(--t3);border:1px solid var(--border-2);padding:3px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0;margin-top:1px}
+.ai-text{font-size:12px;color:var(--t2);line-height:1.6}
+.ai-text strong{color:var(--t1);font-weight:500}
+
+/* ── MODAL ─────────────────────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(2px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .15s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid var(--border-2);border-radius:8px;width:480px;max-width:calc(100vw - 32px);max-height:calc(100vh - 64px);overflow-y:auto;transform:translateY(8px) scale(.99);transition:transform .15s}
+.overlay.open .modal{transform:translateY(0) scale(1)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:14px;font-weight:600;color:var(--t1)}
+.modal-close{width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t3);background:none;border:none;transition:all .1s}
+.modal-close:hover{background:var(--hover);color:var(--t1)}
+.modal-body{padding:20px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--border)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-input-sm{text-align:center}
+.builder-header{display:grid;grid-template-columns:1fr 60px 60px 60px 28px;gap:6px;padding:0 0 6px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:2px}
+.builder-row{display:grid;grid-template-columns:1fr 60px 60px 60px 28px;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);align-items:center}
+.del-btn{background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:3px;transition:all .1s}
+.del-btn:hover{color:var(--red);background:rgba(192,57,43,.08)}
+
+/* ── PROFILE MODAL ─────────────────────────────────────────────────────── */
+.profile-avatar-big{
+  width:60px;height:60px;border-radius:50%;
+  background:var(--accent-dim);border:2px solid var(--accent-border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:600;color:var(--accent);
+  margin:0 auto 16px;
+}
+.sect-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sect-lbl{font-family:var(--mono);font-size:10px;color:var(--t3);letter-spacing:.5px;text-transform:uppercase}
+.sect-action{font-size:12px;color:var(--t2);cursor:pointer;transition:color .1s;display:flex;align-items:center;gap:4px}
+.sect-action:hover{color:var(--t1)}
+
+/* ── TOAST ─────────────────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--t1);color:var(--bg);font-size:12px;font-weight:500;padding:9px 16px;border-radius:var(--r);z-index:999;display:flex;align-items:center;gap:7px;opacity:0;transform:translateY(8px);transition:all .2s cubic-bezier(.34,1.2,.64,1);pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── PAGES ─────────────────────────────────────────────────────────────── */
+.page{display:none}.page.active{display:block}
+
+/* ── EMPTY STATE ─────────────────────────────────────────────────────── */
+.empty{text-align:center;padding:48px 24px;color:var(--t3)}
+.empty-icon{font-size:32px;margin-bottom:12px;opacity:.4}
+.empty p{font-size:13px;margin-bottom:16px}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────────────────── */
+@media(max-width:1080px){.g4{grid-template-columns:repeat(2,1fr)}.meas-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:860px){
+  .sidebar{width:48px}
+  .sidebar .logo-name,.sidebar .logo-ver,.nav-item span,.nav-group-label,.nav-badge,.u-name,.u-level,.user-menu{display:none}
+  .sidebar-logo{justify-content:center;padding:0 12px}
+  .nav-item{padding:10px 14px;justify-content:center}
+  .sidebar-user{padding:10px;justify-content:center}
+  .main{margin-left:48px}
+  .topbar{padding:0 16px}.content{padding:16px}
+  .habits-full-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:580px){
+  .g4,.g3,.g2{grid-template-columns:1fr}
+  .meas-grid{grid-template-columns:repeat(2,1fr)}
+  .habits-full-grid{grid-template-columns:1fr}
+  .score-factors{grid-template-columns:1fr}
+  .sf{border-right:none;border-bottom:1px solid var(--border)}
+  .sf:last-child{border-bottom:none}
+  .field-row{grid-template-columns:1fr}
+}
+
+/* ── MOBILE OPTIMIZATION ─────────────────────────────────────────────── */
+@media(max-width:700px){
+  body{font-size:14px;padding-bottom:68px}
+  .auth-box{width:100%;max-width:calc(100vw - 24px);border-radius:10px}
+  .auth-logo{padding:22px 20px 18px}
+  .auth-body{padding:20px}
+  .auth-title{font-size:18px}
+  .field-input,.field-select{padding:11px 12px;min-height:44px}
+  .btn{min-height:44px}
+  .sidebar{width:100%;height:64px;inset:auto 0 0 0;bottom:0;top:auto;flex-direction:row;border-right:none;border-top:1px solid var(--border);z-index:100}
+  .sidebar-logo{display:none}
+  .sidebar-nav{display:flex;align-items:stretch;padding:0;overflow:hidden;width:100%}
+  .nav-group-label{display:none}
+  .nav-item{flex:1;min-width:0;height:64px;margin:0;padding:7px 3px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;border-left:none;border-top:2px solid transparent;font-size:10px}
+  .nav-item.active{border-left:none;border-top-color:var(--accent);background:var(--active)}
+  .nav-item span{display:block!important;white-space:nowrap}
+  .nav-item .nav-badge{display:none!important}
+  .sidebar-user{display:none}
+  .main{margin-left:0;min-width:0;width:100%}
+  .topbar{height:48px;padding:0 14px;position:sticky}
+  .topbar-title{font-size:12px}
+  .topbar-sub{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar-date{display:none}
+  .content{padding:12px}
+  .card{padding:14px}
+  .card-sm{padding:13px}
+  .kpi-value{font-size:22px}
+  .score-number{font-size:44px}
+  .tabs-row{width:100%;overflow-x:auto;scrollbar-width:none}
+  .tabs-row::-webkit-scrollbar{display:none}
+  .tab-btn{padding:10px 12px;white-space:nowrap;font-size:12px}
+  .page>div:first-child{gap:10px!important}
+  .page>div:first-child>.tabs-row{flex:1}
+  .page>div:first-child>.btn{flex-shrink:0}
+  .hist-table{display:block;overflow-x:auto;white-space:nowrap}
+  .hist-table th,.hist-table td{padding-right:12px}
+  .meas-grid{grid-template-columns:1fr 1fr}
+  .builder-header{grid-template-columns:minmax(110px,1fr) 48px 48px 56px 24px}
+  .builder-row{grid-template-columns:minmax(110px,1fr) 48px 48px 56px 24px}
+  .builder-row .field-input{padding-left:7px;padding-right:7px;font-size:12px}
+  .modal{width:calc(100vw - 20px)!important;max-height:calc(100vh - 30px)}
+  .modal-body{padding:16px}
+  .modal-header{padding:15px 16px}
+  .modal-footer{padding:12px 16px}
+  .week-grid{height:48px}
+  .habits-full-grid{gap:1px}
+  .hfc{padding:13px}
+  .ai-callout{padding:12px}
+}
+@media(max-width:380px){
+  .content{padding:9px}
+  .nav-item{font-size:9px}
+  .nav-item svg{width:14px;height:14px}
+  .g4{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ AUTH SCREEN ══════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+          <path d="M6 1L11 6L6 11L1 6L6 1Z" fill="white" opacity=".9"/>
+        </svg>
+      </div>
+      <span class="auth-logo-name">Athlete OS</span>
+    </div>
+    <div class="auth-body">
+
+      <!-- Login form -->
+      <div id="auth-login">
+        <div class="auth-title">Войти в аккаунт</div>
+        <div class="auth-sub">Ваши данные хранятся в браузере</div>
+        <div class="auth-error" id="login-error">Неверный email или пароль</div>
+        <div class="field">
+          <label class="field-label">Email</label>
+          <input class="field-input" id="login-email" type="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="field">
+          <label class="field-label">Пароль</label>
+          <input class="field-input" id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="doLogin()">Войти</button>
+        <div class="auth-footer">Нет аккаунта? <span onclick="showRegister()">Создать</span></div>
+      </div>
+
+      <!-- Register + onboarding -->
+      <div id="auth-register" style="display:none">
+        <div class="auth-title">Создать аккаунт</div>
+        <div class="auth-sub">Шаг <span id="ob-step-num">1</span> из 3</div>
+        <div class="onboard-progress">
+          <div class="ob-dot done" id="ob-dot-1"></div>
+          <div class="ob-dot" id="ob-dot-2"></div>
+          <div class="ob-dot" id="ob-dot-3"></div>
+        </div>
+        <div class="auth-error" id="reg-error"></div>
+
+        <!-- Step 1: Account -->
+        <div class="onboard-step active" id="ob-step-1">
+          <div class="field">
+            <label class="field-label">Имя</label>
+            <input class="field-input" id="reg-name" placeholder="Иван Петров" autocomplete="name">
+          </div>
+          <div class="field">
+            <label class="field-label">Email</label>
+            <input class="field-input" id="reg-email" type="email" placeholder="you@example.com" autocomplete="email">
+          </div>
+          <div class="field">
+            <label class="field-label">Пароль</label>
+            <input class="field-input" id="reg-pass" type="password" placeholder="Минимум 6 символов" autocomplete="new-password">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="obNext(1)">Далее →</button>
+          <div class="auth-footer">Уже есть аккаунт? <span onclick="showLogin()">Войти</span></div>
+        </div>
+
+        <!-- Step 2: Body stats -->
+        <div class="onboard-step" id="ob-step-2">
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Вес (кг)</label>
+              <input class="field-input" id="reg-weight" type="number" placeholder="80" min="30" max="300">
+            </div>
+            <div class="field">
+              <label class="field-label">Рост (см)</label>
+              <input class="field-input" id="reg-height" type="number" placeholder="180" min="100" max="250">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Возраст</label>
+              <input class="field-input" id="reg-age" type="number" placeholder="25" min="10" max="100">
+            </div>
+            <div class="field">
+              <label class="field-label">Пол</label>
+              <select class="field-select" id="reg-gender">
+                <option value="M">Мужской</option>
+                <option value="F">Женский</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Цель</label>
+            <select class="field-select" id="reg-goal">
+              <option value="strength">Набор силы</option>
+              <option value="mass">Набор массы</option>
+              <option value="cut">Похудение</option>
+              <option value="endurance">Выносливость</option>
+              <option value="health">Поддержание формы</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="obNext(2)">Далее →</button>
+          <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="obBack(2)">← Назад</button>
+        </div>
+
+        <!-- Step 3: Sport -->
+        <div class="onboard-step" id="ob-step-3">
+          <div class="field">
+            <label class="field-label">Вид спорта / активности</label>
+            <select class="field-select" id="reg-sport">
+              <option>Бодибилдинг</option>
+              <option>Пауэрлифтинг</option>
+              <option>Кроссфит</option>
+              <option>Бокс</option>
+              <option>Фитнес</option>
+              <option>Бег</option>
+              <option>Плавание</option>
+              <option>Другое</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Тренировок в неделю</label>
+            <select class="field-select" id="reg-freq">
+              <option value="2">1–2 раза</option>
+              <option value="3" selected>3 раза</option>
+              <option value="4">4 раза</option>
+              <option value="5">5 раз</option>
+              <option value="6">6+ раз</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Опыт</label>
+            <select class="field-select" id="reg-exp">
+              <option value="beginner">Новичок (до 1 года)</option>
+              <option value="intermediate">Любитель (1–3 года)</option>
+              <option value="advanced">Опытный (3+ лет)</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="doRegister()">Создать аккаунт</button>
+          <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="obBack(3)">← Назад</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ APP ══════════════════════════════════════ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M6 1L11 6L6 11L1 6L6 1Z" fill="white" opacity=".9"/>
+        </svg>
+      </div>
+      <span class="logo-name">Athlete OS</span>
+      <span class="logo-ver">v1</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Overview</div>
+      <div class="nav-item active" onclick="goto('dashboard',this)">
+        <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1" y="1" width="5.5" height="5.5" rx="1"/><rect x="8.5" y="1" width="5.5" height="5.5" rx="1"/><rect x="1" y="8.5" width="5.5" height="5.5" rx="1"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1"/></svg>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-group-label">Training</div>
+      <div class="nav-item" onclick="goto('workouts',this)">
+        <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 7.5h1.5l1.5-3 2 5.5 2-8 2 5.5 1.5-3H14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Workouts</span>
+      </div>
+      <div class="nav-group-label">Insights</div>
+      <div class="nav-item" onclick="goto('progress',this)">
+        <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.2"><polyline points="1,12 5,7 8.5,10 13,3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="8.5" cy="10" r="1.2" fill="currentColor" stroke="none"/></svg>
+        <span>Progress</span>
+      </div>
+      <div class="nav-item" onclick="goto('habits',this)">
+        <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1" y="1" width="13" height="13" rx="2"/><polyline points="4.5,7.5 6.5,9.5 10.5,5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Habits</span>
+        <span class="nav-badge" id="nav-habit-badge">0</span>
+      </div>
+    </nav>
+    <div class="sidebar-user" onclick="toggleUserMenu()">
+      <div class="avatar" id="sidebar-avatar">?</div>
+      <div>
+        <div class="u-name" id="sidebar-name">—</div>
+        <div class="u-level" id="sidebar-level">—</div>
+      </div>
+      <svg style="margin-left:auto;color:var(--t3)" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><polyline points="4,2 8,6 4,10"/></svg>
+      <div class="user-menu" id="user-menu">
+        <div class="user-menu-item" onclick="openModal('modal-profile'); event.stopPropagation()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="6.5" cy="4" r="2.5"/><path d="M1.5 11.5c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke-linecap="round"/></svg>
+          Профиль и данные
+        </div>
+        <div class="user-menu-item danger" onclick="doLogout()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8.5 4.5L11.5 6.5 8.5 8.5M11.5 6.5H5M5 2H2v9h3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Выйти
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <span class="topbar-title" id="topbar-title">Dashboard</span>
+      <span class="topbar-sep">/</span>
+      <span class="topbar-sub" id="topbar-sub">Overview</span>
+      <span class="topbar-date" id="topbar-date"></span>
+    </header>
+    <div class="content">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div style="margin-bottom:20px">
+        <div class="grid g4" style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+          <div class="card card-sm"><div class="kpi-label">Вес тела</div><div class="kpi-value" id="dash-weight">—<span class="kpi-unit">кг</span></div><div class="kpi-delta" id="dash-weight-delta">Нет данных</div></div>
+          <div class="card card-sm"><div class="kpi-label">Тренировок</div><div class="kpi-value" id="dash-workouts-cnt">0</div><div class="kpi-delta up" id="dash-workouts-delta">всего</div></div>
+          <div class="card card-sm"><div class="kpi-label">Тоннаж · неделя</div><div class="kpi-value" id="dash-tonnage">—<span class="kpi-unit">т</span></div><div class="kpi-delta" id="dash-tonnage-delta">нет тренировок</div></div>
+          <div class="card card-sm"><div class="kpi-label">Серия привычек</div><div class="kpi-value" id="dash-streak">0<span class="kpi-unit">дн</span></div><div class="kpi-delta" id="dash-streak-delta">начните сегодня</div></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div class="card card-bd">
+          <div class="kpi-label">Athlete Score</div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0">
+            <div class="score-number" id="score-num">—<em>/ 100</em></div>
+            <span class="score-status-badge" id="score-badge">Нет данных</span>
+          </div>
+          <div class="score-bar-bg"><div class="score-bar-fill" id="score-fill" style="width:0%"></div></div>
+          <div class="score-factors">
+            <div class="sf"><div class="sf-name">Тренировки</div><div class="sf-val" id="sf-train">—</div><div class="sf-bar"><div class="sf-bar-fill" id="sf-train-bar" style="width:0%"></div></div></div>
+            <div class="sf"><div class="sf-name">Привычки</div><div class="sf-val" id="sf-habits">—</div><div class="sf-bar"><div class="sf-bar-fill" id="sf-habits-bar" style="width:0%"></div></div></div>
+            <div class="sf"><div class="sf-name">Восстановление</div><div class="sf-val" id="sf-rec">—</div><div class="sf-bar"><div class="sf-bar-fill" id="sf-rec-bar" style="width:0%;background:var(--amber)"></div></div></div>
+          </div>
+          <div class="xp-section">
+            <div class="xp-meta"><span class="xp-label" id="xp-label">Уровень 1</span><span class="xp-pts" id="xp-pts">0 / 500 XP</span></div>
+            <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="card card-bd">
+          <div class="sect-head">
+            <div class="kpi-label" style="margin-bottom:0">Активность недели</div>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--t3)" id="week-label">0 / 0 сессий</span>
+          </div>
+          <div class="week-grid" id="week-grid" style="margin-top:12px"></div>
+          <div class="stats-strip">
+            <div class="ss-item"><div class="ss-val" id="week-cnt">0</div><div class="ss-label">тренировки</div></div>
+            <div class="ss-item"><div class="ss-val" id="week-time">0 ч</div><div class="ss-label">время</div></div>
+            <div class="ss-item"><div class="ss-val" id="week-ton">0 т</div><div class="ss-label">тоннаж</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px">
+        <div class="card card-bd">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+            <div><div class="kpi-label" style="margin-bottom:3px">Сегодня</div><div style="font-size:14px;font-weight:600;color:var(--t1)">Тренировка дня</div></div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('modal-log-workout')">+ Записать</button>
+          </div>
+          <div id="today-exercises-wrap">
+            <div class="empty"><div class="empty-icon">🏋️</div><p>Нет запланированной тренировки.<br>Добавьте тренировку в разделе Workouts.</p></div>
+          </div>
+        </div>
+        <div class="card card-bd">
+          <div class="sect-head">
+            <div class="kpi-label" style="margin-bottom:0">Привычки · сегодня</div>
+            <span class="sect-action" onclick="goto('habits',document.querySelector('[onclick*=habits]'))">все <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4"><polyline points="3,2 7,5 3,8"/></svg></span>
+          </div>
+          <div id="dash-habits-list"></div>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+            <div class="hcb-row"><span class="hcb-label">Выполнено</span><span class="hcb-val" id="habit-progress-lbl">0 / 0</span></div>
+            <div class="hcb-track"><div class="hcb-fill" id="habit-progress-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card card-bd" style="margin-bottom:12px">
+        <div class="sect-head"><div class="kpi-label" style="margin-bottom:0">Личные рекорды</div></div>
+        <div id="dash-records-wrap">
+          <div class="empty"><div class="empty-icon">🏆</div><p>Рекорды появятся после первых тренировок</p></div>
+        </div>
+      </div>
+      <div class="ai-callout" id="ai-callout">
+        <div class="ai-icon">AI Coach</div>
+        <div class="ai-text" id="ai-text">Добро пожаловать в Athlete OS. Начните с добавления первой тренировки и привычек — система начнёт анализировать ваши данные.</div>
+      </div>
+    </div>
+
+    <!-- WORKOUTS -->
+    <div id="page-workouts" class="page">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div class="tabs-row" style="margin-bottom:0;border-bottom:none">
+          <button class="tab-btn active" onclick="switchTab(this,'wt-exercises')">Упражнения</button>
+          <button class="tab-btn" onclick="switchTab(this,'wt-history')">История</button>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-ex')">+ Упражнение</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-log-workout')">+ Записать тренировку</button>
+        </div>
+      </div>
+      <div id="wt-exercises" class="tab-pane active">
+        <div class="grid gg g3" id="ex-grid"></div>
+      </div>
+      <div id="wt-history" class="tab-pane">
+        <div class="card card-bd">
+          <table class="hist-table">
+            <thead><tr><th>Дата</th><th>Тренировка</th><th>Длительность</th><th>Подходов</th><th>Тоннаж</th></tr></thead>
+            <tbody id="hist-body"></tbody>
+          </table>
+          <div id="hist-empty" class="empty"><div class="empty-icon">📋</div><p>История тренировок пуста</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div id="page-progress" class="page">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div class="tabs-row" style="margin-bottom:0;border-bottom:none">
+          <button class="tab-btn active" onclick="switchTab(this,'pt-weight')">Вес</button>
+          <button class="tab-btn" onclick="switchTab(this,'pt-anthro')">Антропометрия</button>
+          <button class="tab-btn" onclick="switchTab(this,'pt-strength')">Силовые</button>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modal-measurement')">+ Замер</button>
+      </div>
+      <div id="pt-weight" class="tab-pane active">
+        <div style="margin-bottom:12px">
+          <div class="grid g4" style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+            <div class="card card-sm"><div class="kpi-label">Текущий</div><div class="kpi-value" id="prog-weight-cur">—<span class="kpi-unit">кг</span></div></div>
+            <div class="card card-sm"><div class="kpi-label">Стартовый</div><div class="kpi-value" id="prog-weight-start">—<span class="kpi-unit">кг</span></div></div>
+            <div class="card card-sm"><div class="kpi-label">Изменение</div><div class="kpi-value" id="prog-weight-delta">—</div></div>
+            <div class="card card-sm"><div class="kpi-label">Измерений</div><div class="kpi-value" id="prog-weight-cnt">0</div></div>
+          </div>
+        </div>
+        <div class="card card-bd">
+          <div class="kpi-label" style="margin-bottom:16px">Динамика веса</div>
+          <div id="weight-chart-wrap">
+            <div class="empty"><div class="empty-icon">📈</div><p>Добавьте первый замер веса, чтобы увидеть график</p><button class="btn btn-primary btn-sm" onclick="openModal('modal-measurement')">+ Замер</button></div>
+          </div>
+        </div>
+      </div>
+      <div id="pt-anthro" class="tab-pane">
+        <div class="card card-bd">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div class="kpi-label" style="margin-bottom:0">Антропометрия</div>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--t3)" id="anthro-date">—</span>
+          </div>
+          <div id="anthro-wrap">
+            <div class="empty"><div class="empty-icon">📏</div><p>Добавьте замер, чтобы увидеть обмеры тела</p><button class="btn btn-primary btn-sm" onclick="openModal('modal-measurement')">+ Замер</button></div>
+          </div>
+        </div>
+      </div>
+      <div id="pt-strength" class="tab-pane">
+        <div class="card card-bd">
+          <div class="kpi-label" style="margin-bottom:12px">Силовые рекорды</div>
+          <div id="strength-wrap">
+            <div class="empty"><div class="empty-icon">💪</div><p>Рекорды появятся после записи тренировок</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HABITS -->
+    <div id="page-habits" class="page">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div class="tabs-row" style="margin-bottom:0;border-bottom:none">
+          <button class="tab-btn active" onclick="switchTab(this,'ht-today')">Сегодня</button>
+          <button class="tab-btn" onclick="switchTab(this,'ht-all')">Все привычки</button>
+          <button class="tab-btn" onclick="switchTab(this,'ht-stats')">Статистика</button>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modal-habit')">+ Привычка</button>
+      </div>
+      <div id="ht-today" class="tab-pane active">
+        <div id="habits-full-wrap"></div>
+      </div>
+      <div id="ht-all" class="tab-pane">
+        <div class="card card-bd" id="habits-all-wrap"></div>
+      </div>
+      <div id="ht-stats" class="tab-pane">
+        <div class="grid gg g4" id="habit-stats-grid"></div>
+      </div>
+    </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ════════════════════════ MODALS ════════════════════════════════════ -->
+
+<!-- Log Workout -->
+<div class="overlay" id="modal-log-workout" onclick="closeModal(event,'modal-log-workout')">
+<div class="modal" style="width:520px">
+  <div class="modal-header"><span class="modal-title">Записать тренировку</span><button class="modal-close" onclick="closeModal(null,'modal-log-workout')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2L2 12"/></svg></button></div>
+  <div class="modal-body">
+    <div class="field"><label class="field-label">Название тренировки</label><input class="field-input" id="wk-name" placeholder="Грудь / Плечи / Трицепс"></div>
+    <div class="field-row" style="margin-bottom:14px">
+      <div class="field" style="margin-bottom:0"><label class="field-label">Дата</label><input class="field-input" id="wk-date" type="date"></div>
+      <div class="field" style="margin-bottom:0"><label class="field-label">Длительность (мин)</label><input class="field-input" id="wk-duration" type="number" placeholder="60" min="1"></div>
+    </div>
+    <div class="builder-header"><span>Упражнение</span><span>Подх.</span><span>Повт.</span><span>Вес кг</span><span></span></div>
+    <div id="wk-rows">
+      <div class="builder-row">
+        <input class="field-input" placeholder="Жим лёжа">
+        <input class="field-input field-input-sm" type="number" placeholder="4" min="1">
+        <input class="field-input field-input-sm" type="number" placeholder="8" min="1">
+        <input class="field-input field-input-sm" type="number" placeholder="100" min="0">
+        <button class="del-btn" onclick="this.closest('.builder-row').remove()">×</button>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%;justify-content:center" onclick="addWkRow()">+ Упражнение</button>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal(null,'modal-log-workout')">Отмена</button>
+    <button class="btn btn-primary btn-sm" onclick="saveWorkout()">Сохранить</button>
+  </div>
+</div>
+</div>
+
+<!-- Add Exercise -->
+<div class="overlay" id="modal-add-ex" onclick="closeModal(event,'modal-add-ex')">
+<div class="modal">
+  <div class="modal-header"><span class="modal-title">Новое упражнение</span><button class="modal-close" onclick="closeModal(null,'modal-add-ex')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2L2 12"/></svg></button></div>
+  <div class="modal-body">
+    <div class="field"><label class="field-label">Название</label><input class="field-input" id="ex-name" placeholder="Жим штанги лёжа"></div>
+    <div class="field-row">
+      <div class="field"><label class="field-label">Группа мышц</label><select class="field-select" id="ex-muscle"><option>Грудь</option><option>Спина</option><option>Ноги</option><option>Плечи</option><option>Бицепс</option><option>Трицепс</option><option>Пресс</option><option>Икры</option></select></div>
+      <div class="field"><label class="field-label">Тип</label><select class="field-select" id="ex-type"><option>Штанга</option><option>Гантели</option><option>Тренажёр</option><option>Собственный вес</option><option>Блок</option></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label class="field-label">Личный рекорд (кг)</label><input class="field-input" id="ex-pr-weight" type="number" placeholder="100" min="0"></div>
+      <div class="field"><label class="field-label">Повторений в рекорде</label><input class="field-input" id="ex-pr-reps" type="number" placeholder="5" min="1"></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal(null,'modal-add-ex')">Отмена</button>
+    <button class="btn btn-primary btn-sm" onclick="saveExercise()">Добавить</button>
+  </div>
+</div>
+</div>
+
+<!-- Add Habit -->
+<div class="overlay" id="modal-habit" onclick="closeModal(event,'modal-habit')">
+<div class="modal">
+  <div class="modal-header"><span class="modal-title">Новая привычка</span><button class="modal-close" onclick="closeModal(null,'modal-habit')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2L2 12"/></svg></button></div>
+  <div class="modal-body">
+    <div class="field"><label class="field-label">Название привычки</label><input class="field-input" id="hb-name" placeholder="Зарядка утром"></div>
+    <div class="field"><label class="field-label">Категория</label><select class="field-select" id="hb-type"><option>Физическая активность</option><option>Гидратация</option><option>Сон / Восстановление</option><option>Питание</option><option>Ментальная практика</option></select></div>
+    <div class="field"><label class="field-label">Описание (необязательно)</label><input class="field-input" id="hb-desc" placeholder="Подробнее о привычке"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal(null,'modal-habit')">Отмена</button>
+    <button class="btn btn-primary btn-sm" onclick="saveHabit()">Добавить</button>
+  </div>
+</div>
+</div>
+
+<!-- Measurement -->
+<div class="overlay" id="modal-measurement" onclick="closeModal(event,'modal-measurement')">
+<div class="modal">
+  <div class="modal-header"><span class="modal-title">Новый замер</span><button class="modal-close" onclick="closeModal(null,'modal-measurement')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2L2 12"/></svg></button></div>
+  <div class="modal-body">
+    <div class="field"><label class="field-label">Дата</label><input class="field-input" id="m-date" type="date"></div>
+    <div class="field-row">
+      <div class="field"><label class="field-label">Вес, кг</label><input class="field-input" type="number" id="m-w" placeholder="80" step="0.1" min="30" max="300"></div>
+      <div class="field"><label class="field-label">Рост, см</label><input class="field-input" type="number" id="m-h" placeholder="180" min="100" max="250"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label class="field-label">Шея, см</label><input class="field-input" type="number" id="m-neck" placeholder="40" min="20" max="80"></div>
+      <div class="field"><label class="field-label">Грудь, см</label><input class="field-input" type="number" id="m-chest" placeholder="100" min="50" max="200"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label class="field-label">Талия, см</label><input class="field-input" type="number" id="m-waist" placeholder="85" min="40" max="200"></div>
+      <div class="field"><label class="field-label">Бицепс, см</label><input class="field-input" type="number" id="m-bicep" placeholder="40" min="15" max="80"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label class="field-label">Бедро, см</label><input class="field-input" type="number" id="m-thigh" placeholder="60" min="30" max="120"></div>
+      <div class="field"><label class="field-label">Икры, см</label><input class="field-input" type="number" id="m-calf" placeholder="38" min="20" max="80"></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal(null,'modal-measurement')">Отмена</button>
+    <button class="btn btn-primary btn-sm" onclick="saveMeasurement()">Сохранить</button>
+  </div>
+</div>
+</div>
+<!-- Profile Edit -->
+<div class="overlay" id="modal-profile" onclick="closeModal(event,'modal-profile')">
+<div class="modal">
+  <div class="modal-header"><span class="modal-title">Профиль</span><button class="modal-close" onclick="closeModal(null,'modal-profile')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 2l10 10M12 2L2 12"/></svg></button></div>
+  <div class="modal-body">
+    <div class="profile-avatar-big" id="profile-avatar-big">?</div>
+    <div class="field"><label class="field-label">Имя</label><input class="field-input" id="prof-name" placeholder="Имя"></div>
+    <div class="field-row">
+      <div class="field"><label class="field-label">Вес (кг)</label><input class="field-input" id="prof-weight" type="number" step="0.1" min="30" max="300" placeholder="80"></div>
+      <div class="field"><label class="field-label">Рост (см)</label><input class="field-input" id="prof-height" type="number" min="100" max="250" placeholder="180"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label class="field-label">Возраст</label><input class="field-input" id="prof-age" type="number" min="10" max="100" placeholder="25"></div>
+      <div class="field"><label class="field-label">Цель</label><select class="field-select" id="prof-goal"><option value="strength">Набор силы</option><option value="mass">Набор массы</option><option value="cut">Похудение</option><option value="endurance">Выносливость</option><option value="health">Поддержание формы</option></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label class="field-label">Вид спорта</label><select class="field-select" id="prof-sport"><option>Бодибилдинг</option><option>Пауэрлифтинг</option><option>Кроссфит</option><option>Бокс</option><option>Фитнес</option><option>Бег</option><option>Плавание</option><option>Другое</option></select></div>
+      <div class="field"><label class="field-label">Трен. в неделю</label><select class="field-select" id="prof-freq"><option value="2">1–2 раза</option><option value="3">3 раза</option><option value="4">4 раза</option><option value="5">5 раз</option><option value="6">6+ раз</option></select></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost btn-sm" onclick="closeModal(null,'modal-profile')">Отмена</button>
+    <button class="btn btn-primary btn-sm" onclick="saveProfile()">Сохранить</button>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ══════════════════════════════════════════════════════════════════════
+// STORAGE HELPERS
+// ══════════════════════════════════════════════════════════════════════
+const LS = {
+  get: (k, def=null) => {
+    try {
+      const v=localStorage.getItem(k);
+      return v ? JSON.parse(v) : def;
+    } catch { return def; }
+  },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch{} },
+  del: (k) => { try { localStorage.removeItem(k); } catch{} }
+};
+
+// ══════════════════════════════════════════════════════════════════════
+// CLOUD STORAGE / AUTH
+// ══════════════════════════════════════════════════════════════════════
+// 1. Создайте бесплатный проект Supabase.
+// 2. Вставьте сюда Project URL и Publishable key.
+// 3. SQL для таблицы profiles_data находится ниже в инструкции после кода.
+const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+const SUPABASE_KEY = 'YOUR_PUBLISHABLE_KEY';
+const CLOUD_ENABLED = SUPABASE_URL.includes('.supabase.co') && !SUPABASE_URL.includes('YOUR_PROJECT') && SUPABASE_KEY !== 'YOUR_PUBLISHABLE_KEY';
+const sb = window.supabase && CLOUD_ENABLED ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+// ══════════════════════════════════════════════════════════════════════
+// APP STATE
+// ══════════════════════════════════════════════════════════════════════
+let CU = null;
+let CLOUD_USER = null;
+let cloudReady = false;
+
+function getUserKey(email) {
+  return btoa(unescape(encodeURIComponent(email.toLowerCase().trim()))).replace(/=+$/,'');
+}
+
+const EMPTY_UD = () => ({
+  profile:{}, exercises:[], workoutLog:[], habits:[], measurements:[], records:{}, xp:0
+});
+
+function getUserData() {
+  if (!CU) return null;
+  return LS.get('aosUD_' + CU, EMPTY_UD());
+}
+
+function saveUD(data) {
+  if (!CU) return;
+  LS.set('aosUD_' + CU, data);
+  // Локальный кеш сохраняется мгновенно, облако обновляется параллельно.
+  if (sb && CLOUD_USER) syncUserData(data);
+}
+
+async function syncUserData(data) {
+  if (!sb || !CLOUD_USER) return;
+  const { error } = await sb.from('profiles_data').upsert({
+    user_id: CLOUD_USER.id,
+    data: data,
+    updated_at: new Date().toISOString()
+  }, { onConflict:'user_id' });
+  if (error) console.error('Cloud save error:', error);
+}
+
+async function loadUserDataFromCloud(user) {
+  if (!sb || !user) return EMPTY_UD();
+  const { data, error } = await sb.from('profiles_data').select('data').eq('user_id',user.id).maybeSingle();
+  if (error) throw error;
+  const ud = data?.data || EMPTY_UD();
+  CU = user.id;
+  CLOUD_USER = user;
+  cloudReady = true;
+  LS.set('aosUD_'+CU, ud);
+  return ud;
+}
+
+function getUsers() { return LS.get('aosUsers', {}); }
+function saveUsers(u) { LS.set('aosUsers', u); }
+function simpleHash(s) {
+  let h=0;
+  for(let i=0;i<s.length;i++) h=((h<<5)-h+s.charCodeAt(i))|0;
+  return h.toString(36);
+}
+
+async function cloudSignIn(email, pass) {
+  if (!sb) return null;
+  const { data, error } = await sb.auth.signInWithPassword({email,password:pass});
+  if (error) throw error;
+  if (!data.user) throw new Error('Не удалось получить пользователя');
+  const ud = await loadUserDataFromCloud(data.user);
+  return ud;
+}
+
+async function cloudSignUp(email, pass, name, ud) {
+  if (!sb) return null;
+  const { data, error } = await sb.auth.signUp({
+    email,password:pass,
+    options:{data:{name}}
+  });
+  if (error) throw error;
+  if (!data.user) throw new Error('Не удалось создать аккаунт');
+  if (!data.session) {
+    throw new Error('Аккаунт создан. Подтвердите email, затем войдите снова.');
+  }
+  CU=data.user.id;
+  CLOUD_USER=data.user;
+  cloudReady=true;
+  LS.set('aosUD_'+CU,ud);
+  await syncUserData(ud);
+  return ud;
+}
+
+async function doLogin() {
+  const email=document.getElementById('login-email').value.trim().toLowerCase();
+  const pass=document.getElementById('login-pass').value;
+  const err=document.getElementById('login-error');
+  if(!email||!pass){err.classList.add('show');err.textContent='Заполните все поля';return;}
+  err.classList.remove('show');
+
+  try {
+    if (sb) {
+      try {
+        await cloudSignIn(email,pass);
+      } catch (cloudErr) {
+        // Миграция старого локального аккаунта: если аккаунт был создан
+        // в предыдущей версии, создаём такой же аккаунт в облаке и переносим данные.
+        const oldUsers=getUsers();
+        const oldKey=getUserKey(email);
+        if(oldUsers[oldKey] && oldUsers[oldKey].passHash===simpleHash(pass)) {
+          const oldData=LS.get('aosUD_'+oldKey,EMPTY_UD());
+          await cloudSignUp(email,pass,oldUsers[oldKey].name,oldData);
+        } else {
+          throw cloudErr;
+        }
+      }
+      LS.set('aosSession',CU);
+      launchApp();
+      return;
+    }
+
+    // Локальный режим оставлен как fallback, если Supabase ещё не настроен.
+    const users=getUsers(), key=getUserKey(email);
+    if(!users[key]){err.classList.add('show');err.textContent='Пользователь не найден';return;}
+    if(users[key].passHash!==simpleHash(pass)){err.classList.add('show');err.textContent='Неверный пароль';return;}
+    CU=key; LS.set('aosSession',CU); launchApp();
+  } catch(e) {
+    console.error(e);
+    err.classList.add('show');
+    err.textContent=e.message||'Не удалось выполнить вход';
+  }
+}
+
+async function doRegister() {
+  const name=document.getElementById('reg-name').value.trim();
+  const email=document.getElementById('reg-email').value.trim().toLowerCase();
+  const pass=document.getElementById('reg-pass').value;
+  const err=document.getElementById('reg-error');
+  if(!name||!email||pass.length<6){err.classList.add('show');err.textContent='Проверьте заполнение шага 1';return;}
+
+  const ud={profile:{},exercises:[],workoutLog:[],habits:[],measurements:[],records:{},xp:0};
+  ud.profile={
+    name,email,
+    weight:parseFloat(document.getElementById('reg-weight').value)||null,
+    height:parseFloat(document.getElementById('reg-height').value)||null,
+    age:parseInt(document.getElementById('reg-age').value)||null,
+    gender:document.getElementById('reg-gender').value,
+    goal:document.getElementById('reg-goal').value,
+    sport:document.getElementById('reg-sport').value,
+    freq:document.getElementById('reg-freq').value,
+    exp:document.getElementById('reg-exp').value
+  };
+  if(ud.profile.weight) ud.measurements.push({date:todayStr(),weight:ud.profile.weight,height:ud.profile.height});
+
+  try {
+    if(sb) {
+      await cloudSignUp(email,pass,name,ud);
+      LS.set('aosSession',CU);
+      launchApp();
+      return;
+    }
+    const users=getUsers(), key=getUserKey(email);
+    if(users[key]){err.classList.add('show');err.textContent='Email уже зарегистрирован';return;}
+    users[key]={email,name,passHash:simpleHash(pass)}; saveUsers(users);
+    CU=key; LS.set('aosSession',CU); saveUD(ud); launchApp();
+  } catch(e) {
+    console.error(e); err.classList.add('show'); err.textContent=e.message||'Не удалось создать аккаунт';
+  }
+}
+
+async function doLogout() {
+  if(sb) { try { await sb.auth.signOut(); } catch(e){ console.error(e); } }
+  LS.del('aosSession'); CU=null; CLOUD_USER=null; cloudReady=false;
+  document.getElementById('app').className='app';
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('login-email').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-error').classList.remove('show');
+  closeUserMenu();
+}
+
+// ── Onboarding steps ──────────────────────────────────────────────────
+function showRegister() {
+  document.getElementById('auth-login').style.display='none';
+  document.getElementById('auth-register').style.display='block';
+}
+
+function showLogin() {
+  document.getElementById('auth-register').style.display='none';
+  document.getElementById('auth-login').style.display='block';
+}
+
+function obNext(step) {
+  const err = document.getElementById('reg-error');
+  err.classList.remove('show');
+
+  if (step === 1) {
+    const n=document.getElementById('reg-name').value.trim();
+    const e=document.getElementById('reg-email').value.trim();
+    const p=document.getElementById('reg-pass').value;
+    if (!n){err.classList.add('show');err.textContent='Введите имя';return}
+    if (!e||!e.includes('@')){err.classList.add('show');err.textContent='Введите корректный email';return}
+    if (p.length<6){err.classList.add('show');err.textContent='Пароль минимум 6 символов';return}
+  }
+
+  document.getElementById('ob-step-'+step).classList.remove('active');
+  document.getElementById('ob-step-'+(step+1)).classList.add('active');
+  document.getElementById('ob-dot-'+(step+1)).classList.add('done');
+  document.getElementById('ob-step-num').textContent = step+1;
+}
+
+function obBack(step) {
+  document.getElementById('ob-step-'+step).classList.remove('active');
+  document.getElementById('ob-step-'+(step-1)).classList.add('active');
+  document.getElementById('ob-dot-'+step).classList.remove('done');
+  document.getElementById('ob-step-num').textContent = step-1;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// LAUNCH APP
+// ══════════════════════════════════════════════════════════════════════
+function launchApp() {
+  if (!CU) return;
+
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('app').className = 'app show';
+  initApp();
+}
+
+function initApp() {
+  const ud = getUserData();
+  if (!ud) return;
+
+  setTopbarDate();
+  updateSidebarUser(ud);
+  renderDashboard(ud);
+  renderExGrid(ud);
+  renderHistory(ud);
+  renderProgress(ud);
+  renderHabits(ud);
+
+  // set today's date defaults in forms
+  const td = todayStr();
+  const dateInputs = ['wk-date','m-date'];
+  dateInputs.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value=td;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════════
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  const d = new Date(s+'T00:00:00');
+  return d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
+}
+
+function initials(name) {
+  if (!name) return '?';
+  return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+}
+
+const LEVEL_NAMES=['Новичок','Любитель','Атлет','Элита','Легенда'];
+const LEVEL_XP=[0,200,600,1400,3000,99999];
+
+function getLevelInfo(xp) {
+  let lv=0;
+  for(let i=0;i<LEVEL_XP.length-1;i++){
+    if(xp>=LEVEL_XP[i]) lv=i;
+  }
+  const name=LEVEL_NAMES[Math.min(lv,LEVEL_NAMES.length-1)];
+  const cur=LEVEL_XP[lv], next=LEVEL_XP[lv+1]||LEVEL_XP[lv];
+  const pct=Math.round(((xp-cur)/(next-cur))*100);
+  return {lv:lv+1,name,xp,cur,next,pct:Math.min(pct,100)};
+}
+
+const HICONS = {
+  'Физическая активность':`<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M6 1v10M1 6h10" stroke-linecap="round"/></svg>`,
+  'Гидратация':`<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M6 1l4 5a4 4 0 11-8 0L6 1z"/></svg>`,
+  'Сон / Восстановление':`<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 6a4 4 0 004 4 4 4 0 000-8c0 2.2-2 4-4 4z"/></svg>`,
+  'Питание':`<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="1.5" width="9" height="9" rx="1"/><path d="M1.5 5.5h9M5.5 1.5v9"/></svg>`,
+  'Ментальная практика':`<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="6" cy="6" r="4"/><circle cx="6" cy="6" r="1.5"/></svg>`,
+};
+
+const CHECK_SVG = `<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="white" stroke-width="1.5"><polyline points="1.5,4 3,5.5 6.5,2"/></svg>`;
+
+// ══════════════════════════════════════════════════════════════════════
+// SIDEBAR + TOPBAR
+// ══════════════════════════════════════════════════════════════════════
+function setTopbarDate() {
+  const d = new Date();
+  document.getElementById('topbar-date').textContent =
+    d.toLocaleDateString('ru-RU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+}
+
+function updateSidebarUser(ud) {
+  if (!ud) return;
+  const name = ud.profile.name || '—';
+  const lv = getLevelInfo(ud.xp || 0);
+  document.getElementById('sidebar-name').textContent = name;
+  document.getElementById('sidebar-level').textContent = lv.name+' · Lv '+lv.lv;
+  document.getElementById('sidebar-avatar').textContent = initials(name);
+  document.getElementById('nav-habit-badge').textContent = ud.habits ? ud.habits.length : 0;
+}
+
+function toggleUserMenu() {
+  document.getElementById('user-menu').classList.toggle('open');
+}
+
+function closeUserMenu() {
+  document.getElementById('user-menu').classList.remove('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.sidebar-user')) closeUserMenu();
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// DASHBOARD (остается без изменений, все функции используют getUserData())
+// ══════════════════════════════════════════════════════════════════════
+function renderDashboard(ud) {
+  if (!ud) return;
+  renderKPIs(ud);
+  renderScore(ud);
+  renderWeekGrid(ud);
+  renderTodayEx(ud);
+  renderDashHabits(ud);
+  renderDashRecords(ud);
+  renderAITip(ud);
+}
+
+// ... ВСЕ ОСТАЛЬНЫЕ ФУНКЦИИ ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ ...
+// (они уже используют getUserData() и saveUD())
+
+// ══════════════════════════════════════════════════════════════════════
+// ОСТАЛЬНЫЕ ФУНКЦИИ (копируем из оригинального кода, они уже правильные)
+// ══════════════════════════════════════════════════════════════════════
+
+// ... (здесь должны быть все остальные функции из оригинального кода) ...
+
+// ══════════════════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('auth-screen').classList.remove('hidden');
+  if (sb) {
+    try {
+      const { data } = await sb.auth.getSession();
+      if (data.session?.user) {
+        await loadUserDataFromCloud(data.session.user);
+        LS.set('aosSession',CU);
+        launchApp();
+        return;
+      }
+    } catch(e) { console.error('Session restore error:',e); }
+    return;
+  }
+  const session=LS.get('aosSession');
+  if(session && getUsers()[session]) { CU=session; launchApp(); }
+});
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if(e.key==='Enter') {
+    const loginVisible = document.getElementById('auth-login').style.display !== 'none' &&
+                         !document.getElementById('auth-screen').classList.contains('hidden');
+    if(loginVisible) doLogin();
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// ОСТАЛЬНЫЕ ФУНКЦИИ (все остальные функции из оригинального кода)
+// ══════════════════════════════════════════════════════════════════════
+
+// Функции для работы с тренировками
+function saveWorkout() {
+  const name=document.getElementById('wk-name').value.trim();
+  const date=document.getElementById('wk-date').value||todayStr();
+  const dur=parseInt(document.getElementById('wk-duration').value)||0;
+  if (!name) { showToast('Введите название тренировки','err'); return; }
+  const rows=[...document.querySelectorAll('#wk-rows .builder-row')];
+  const sets=rows.map(row=>{
+    const inputs=row.querySelectorAll('input');
+    return{name:inputs[0].value.trim(),s:inputs[1].value||'—',r:inputs[2].value||'—',w:inputs[3].value||'0'};
+  }).filter(s=>s.name);
+  if (sets.length===0) { showToast('Добавьте хотя бы одно упражнение','err'); return; }
+
+  const tonnage=sets.reduce((sum,s)=>{
+    const w=parseFloat(s.w)||0, r=parseInt(s.r)||0, ss=parseInt(s.s)||0;
+    return sum+w*r*ss;
+  },0);
+
+  const ud=getUserData();
+  if (!ud) return;
+
+  const id=Date.now();
+  ud.workoutLog.push({id,date,name,duration:dur,sets,tonnage});
+
+  // update records
+  sets.forEach(s=>{
+    const w=parseFloat(s.w)||0, r=parseInt(s.r)||0;
+    if(s.name&&w>0){
+      const prev=ud.records[s.name];
+      if(!prev||w>prev.weight||(w===prev.weight&&r>prev.reps)){
+        ud.records[s.name]={weight:w,reps:r,date,isNew:true};
+        // reset previous isNew
+        Object.values(ud.records).forEach(v=>v.isNew=false);
+        ud.records[s.name].isNew=true;
+      }
+    }
+  });
+
+  // XP
+  ud.xp=(ud.xp||0)+50+(sets.length*5);
+  saveUD(ud);
+  closeModal(null,'modal-log-workout');
+  document.getElementById('wk-name').value='';
+  document.getElementById('wk-duration').value='';
+  document.getElementById('wk-rows').innerHTML=`<div class="builder-row"><input class="field-input" placeholder="Жим лёжа"><input class="field-input field-input-sm" type="number" placeholder="4" min="1"><input class="field-input field-input-sm" type="number" placeholder="8" min="1"><input class="field-input field-input-sm" type="number" placeholder="100" min="0"><button class="del-btn" onclick="this.closest('.builder-row').remove()">×</button></div>`;
+  showToast('Тренировка сохранена');
+  initApp();
+}
+
+function addWkRow() {
+  const row=document.createElement('div'); row.className='builder-row';
+  row.innerHTML=`<input class="field-input" placeholder="Упражнение"><input class="field-input field-input-sm" type="number" placeholder="3" min="1"><input class="field-input field-input-sm" type="number" placeholder="10" min="1"><input class="field-input field-input-sm" type="number" placeholder="60" min="0"><button class="del-btn" onclick="this.closest('.builder-row').remove()">×</button>`;
+  document.getElementById('wk-rows').appendChild(row);
+}
+
+function saveExercise() {
+  const name=document.getElementById('ex-name').value.trim();
+  if (!name) { showToast('Введите название','err'); return; }
+  const ud=getUserData();
+  if (!ud) return;
+
+  const w=parseFloat(document.getElementById('ex-pr-weight').value)||0;
+  const r=parseInt(document.getElementById('ex-pr-reps').value)||0;
+  ud.exercises.push({id:Date.now(),name,muscle:document.getElementById('ex-muscle').value,type:document.getElementById('ex-type').value});
+  if(w>0&&r>0) ud.records[name]={weight:w,reps:r,date:todayStr(),isNew:false};
+  saveUD(ud);
+  document.getElementById('ex-name').value='';
+  document.getElementById('ex-pr-weight').value='';
+  document.getElementById('ex-pr-reps').value='';
+  closeModal(null,'modal-add-ex');
+  renderExGrid(ud);
+  showToast('Упражнение добавлено');
+}
+
+function renderExGrid(ud) {
+  if (!ud) return;
+  const grid=el('ex-grid');
+  if(!ud.exercises.length){
+    grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">💪</div><p>Добавьте свои упражнения</p><button class="btn btn-primary btn-sm" onclick="openModal('modal-add-ex')">+ Упражнение</button></div>`;
+    return;
+  }
+  grid.innerHTML=ud.exercises.map(ex=>{
+    const pr=ud.records[ex.name];
+    return`<div class="ex-card">
+      <div class="ex-card-muscle">${ex.muscle}</div>
+      <div class="ex-card-name">${ex.name}</div>
+      <div class="ex-card-foot">
+        <span class="ex-card-type">${ex.type}</span>
+        <span class="ex-card-pr">${pr?'PR: '+pr.weight+'кг×'+pr.reps:'—'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderHistory(ud) {
+  if (!ud) return;
+  const body=el('hist-body'); const empty=el('hist-empty');
+  if(!ud.workoutLog.length){body.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const sorted=[...ud.workoutLog].sort((a,b)=>b.date.localeCompare(a.date));
+  body.innerHTML=sorted.map(w=>`
+    <tr>
+      <td class="hist-date-cell">${fmtDate(w.date)}</td>
+      <td class="hist-name-cell">${w.name}</td>
+      <td class="hist-num-cell">${w.duration?w.duration+' мин':'—'}</td>
+      <td class="hist-num-cell">${w.sets.length}</td>
+      <td class="hist-num-cell">${w.tonnage?(w.tonnage/1000).toFixed(1)+' т':'—'}</td>
+    </tr>`).join('');
+}
+
+// Функции для замера
+function saveMeasurement() {
+  const date=document.getElementById('m-date').value||todayStr();
+  const meas={
+    date,
+    weight:parseFloat(document.getElementById('m-w').value)||null,
+    height:parseFloat(document.getElementById('m-h').value)||null,
+    neck:parseFloat(document.getElementById('m-neck').value)||null,
+    chest:parseFloat(document.getElementById('m-chest').value)||null,
+    waist:parseFloat(document.getElementById('m-waist').value)||null,
+    bicep:parseFloat(document.getElementById('m-bicep').value)||null,
+    thigh:parseFloat(document.getElementById('m-thigh').value)||null,
+    calf:parseFloat(document.getElementById('m-calf').value)||null,
+  };
+  if(!meas.weight&&!meas.height&&!meas.neck){showToast('Заполните хотя бы одно поле','err');return;}
+  const ud=getUserData();
+  if (!ud) return;
+
+  // Remove same-date entry if exists
+  ud.measurements=ud.measurements.filter(m=>m.date!==date);
+  ud.measurements.push(meas);
+  ud.xp=(ud.xp||0)+10;
+  saveUD(ud);
+  // clear fields
+  ['m-w','m-h','m-neck','m-chest','m-waist','m-bicep','m-thigh','m-calf'].forEach(id=>document.getElementById(id).value='');
+  closeModal(null,'modal-measurement');
+  showToast('Замер сохранён');
+  renderProgress(ud);
+  renderKPIs(ud);
+}
+
+function renderProgress(ud) {
+  if (!ud) return;
+  renderWeightTab(ud);
+  renderAnthroTab(ud);
+  renderStrengthTab(ud);
+}
+
+function renderWeightTab(ud) {
+  if (!ud) return;
+  const meas=[...ud.measurements].filter(m=>m.weight).sort((a,b)=>a.date.localeCompare(b.date));
+  el('prog-weight-cnt').textContent=meas.length;
+  if(!meas.length){
+    el('prog-weight-cur').innerHTML='—<span class="kpi-unit">кг</span>';
+    el('prog-weight-start').innerHTML='—<span class="kpi-unit">кг</span>';
+    el('prog-weight-delta').innerHTML='—';
+    el('weight-chart-wrap').innerHTML=`<div class="empty"><div class="empty-icon">📈</div><p>Добавьте первый замер веса</p><button class="btn btn-primary btn-sm" onclick="openModal('modal-measurement')">+ Замер</button></div>`;
+    return;
+  }
+  const cur=meas[meas.length-1].weight, start=meas[0].weight;
+  const diff=(cur-start).toFixed(1);
+  el('prog-weight-cur').innerHTML=cur+'<span class="kpi-unit">кг</span>';
+  el('prog-weight-start').innerHTML=start+'<span class="kpi-unit">кг</span>';
+  el('prog-weight-delta').innerHTML=`<span style="color:${diff<0?'var(--green)':'var(--red)'}">${diff>0?'+':''}${diff}<span class="kpi-unit">кг</span></span>`;
+  // chart
+  renderWeightChart(meas);
+}
+
+function renderWeightChart(meas) {
+  const wrap=el('weight-chart-wrap');
+  if(meas.length<2){wrap.innerHTML=`<div style="font-family:var(--mono);font-size:11px;color:var(--t3);padding:8px 0">Нужно минимум 2 замера для графика</div>`;return;}
+  const W=600,H=110;
+  const vals=meas.map(m=>m.weight);
+  const min=Math.min(...vals)-1.5, max=Math.max(...vals)+0.5;
+  const xs=vals.map((_,i)=>i*(W/(vals.length-1)));
+  const ys=vals.map(v=>H-((v-min)/(max-min))*H);
+  const pts=xs.map((x,i)=>[x,ys[i]]);
+  const pathD=pts.map((p,i)=>(i===0?`M${p[0]},${p[1]}`:`L${p[0]},${p[1]}`)).join(' ');
+  const areaD=`${pathD} L${pts[pts.length-1][0]},${H+10} L0,${H+10} Z`;
+  wrap.innerHTML=`<svg class="chart-svg" viewBox="0 0 ${W} 140" preserveAspectRatio="none" style="height:140px">
+    <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5B6AD0" stop-opacity=".15"/><stop offset="100%" stop-color="#5B6AD0" stop-opacity="0"/></linearGradient></defs>
+    ${[.25,.5,.75,1].map(t=>`<line x1="0" y1="${H*t}" x2="${W}" y2="${H*t}" stroke="#1F1F1F" stroke-width="1"/>`).join('')}
+    <path d="${areaD}" fill="url(#ag)"/>
+    <path d="${pathD}" fill="none" stroke="#5B6AD0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${pts.map((p,i)=>`
+      <circle cx="${p[0]}" cy="${p[1]}" r="${i===vals.length-1?3.5:2}" fill="${i===vals.length-1?'#5B6AD0':'#2A2A2A'}" stroke="#5B6AD0" stroke-width="1"/>
+      <text x="${p[0]}" y="${H+20}" text-anchor="middle" fill="#444" font-family="JetBrains Mono,monospace" font-size="8">${fmtDate(meas[i].date)}</text>
+      ${i===vals.length-1?`<text x="${p[0]}" y="${p[1]-7}" text-anchor="end" fill="#888" font-family="JetBrains Mono,monospace" font-size="9">${vals[i]}</text>`:''}
+    `).join('')}
+  </svg>`;
+}
+
+function renderAnthroTab(ud) {
+  if (!ud) return;
+  const meas=[...ud.measurements].sort((a,b)=>b.date.localeCompare(a.date));
+  const latest=meas[0];
+  if(!latest){return;}
+  el('anthro-date').textContent=fmtDate(latest.date);
+  const fields=[
+    {k:'weight',l:'Вес',u:'кг'},{k:'height',l:'Рост',u:'см'},
+    {k:'neck',l:'Шея',u:'см'},{k:'chest',l:'Грудь',u:'см'},
+    {k:'waist',l:'Талия',u:'см'},{k:'bicep',l:'Бицепс',u:'см'},
+    {k:'thigh',l:'Бедро',u:'см'},{k:'calf',l:'Икры',u:'см'},
+  ].filter(f=>latest[f.k]!=null);
+  if(!fields.length){el('anthro-wrap').innerHTML=`<div class="empty"><div class="empty-icon">📏</div><p>Заполните поля замера</p></div>`;return;}
+  const perRow=4;
+  el('anthro-wrap').innerHTML=`<div class="meas-grid" style="grid-template-columns:repeat(${Math.min(perRow,fields.length)},1fr)">
+    ${fields.map(f=>`<div class="meas-cell"><div class="meas-label">${f.l}</div><div class="meas-val">${latest[f.k]}<span class="meas-unit">${f.u}</span></div></div>`).join('')}
+  </div>`;
+}
+
+function renderStrengthTab(ud) {
+  if (!ud) return;
+  const recs=Object.entries(ud.records);
+  const wrap=el('strength-wrap');
+  if(!recs.length){wrap.innerHTML=`<div class="empty"><div class="empty-icon">💪</div><p>Рекорды появятся после записи тренировок</p></div>`;return;}
+  wrap.innerHTML=`<table class="rec-table">${recs.map(([name,r])=>`
+    <tr>
+      <td class="rec-name">${name}</td>
+      <td class="rec-val">${r.weight}кг×${r.reps}</td>
+      <td style="width:80px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--t3)">${fmtDate(r.date)}</td>
+    </tr>`).join('')}</table>`;
+}
+
+// Функции для привычек
+function saveHabit() {
+  const name=document.getElementById('hb-name').value.trim();
+  if(!name){showToast('Введите название','err');return;}
+  const ud=getUserData();
+  if (!ud) return;
+
+  ud.habits.push({id:Date.now(),name,type:document.getElementById('hb-type').value,desc:document.getElementById('hb-desc').value,streak:0,doneToday:false,lastDone:null});
+  ud.xp=(ud.xp||0)+20;
+  saveUD(ud);
+  document.getElementById('hb-name').value='';
+  document.getElementById('hb-desc').value='';
+  closeModal(null,'modal-habit');
+  showToast('Привычка добавлена');
+  renderHabits(ud);
+  updateSidebarUser(ud);
+  renderDashHabits(ud);
+  renderScore(ud);
+}
+
+function toggleHabit(id) {
+  const ud=getUserData();
+  if (!ud) return;
+
+  const h=ud.habits.find(x=>x.id===id);
+  if(!h)return;
+  const today=todayStr();
+  if(!h.doneToday){
+    h.doneToday=true;
+    h.lastDone=today;
+    h.streak=(h.streak||0)+1;
+    ud.xp=(ud.xp||0)+10;
+  } else {
+    h.doneToday=false;
+    h.streak=Math.max(0,(h.streak||0)-1);
+  }
+  saveUD(ud);
+  renderHabits(ud);
+  renderDashHabits(ud);
+  renderScore(ud);
+}
+
+function deleteHabit(id) {
+  const ud=getUserData();
+  if (!ud) return;
+
+  ud.habits=ud.habits.filter(h=>h.id!==id);
+  saveUD(ud);
+  renderHabits(ud);
+  renderDashHabits(ud);
+  updateSidebarUser(ud);
+}
+
+function renderHabits(ud) {
+  if (!ud) return;
+  renderHabitsFull(ud);
+  renderHabitsAll(ud);
+  renderHabitsStats(ud);
+}
+
+function renderHabitsFull(ud) {
+  const wrap=el('habits-full-wrap');
+  if(!ud.habits.length){
+    wrap.innerHTML=`<div class="empty"><div class="empty-icon">✅</div><p>Добавьте первую привычку и отслеживайте прогресс каждый день</p><button class="btn btn-primary btn-sm" onclick="openModal('modal-habit')">+ Привычка</button></div>`;
+    return;
+  }
+  wrap.innerHTML=`<div class="habits-full-grid">${ud.habits.map(h=>`
+    <div class="hfc ${h.doneToday?'done':''}" onclick="toggleHabit(${h.id})">
+      <div class="hfc-top">
+        <div class="hfc-icon">${HICONS[h.type]||''}</div>
+        <div class="hfc-check">${h.doneToday?CHECK_SVG:''}</div>
+      </div>
+      <div class="hfc-name">${h.name}</div>
+      <div class="hfc-type">${h.type}</div>
+      <div class="hfc-streak">${h.streak||0} дней подряд</div>
+    </div>`).join('')}</div>`;
+}
+
+function renderHabitsAll(ud) {
+  const wrap=el('habits-all-wrap');
+  if(!ud.habits.length){wrap.innerHTML=`<div class="empty"><div class="empty-icon">✅</div><p>Нет привычек</p></div>`;return;}
+  wrap.innerHTML=`<div class="kpi-label" style="margin-bottom:0;padding-bottom:10px;border-bottom:1px solid var(--border)">Все привычки · ${ud.habits.length}</div>
+    <div>${ud.habits.map(h=>`
+      <div class="habit-row ${h.doneToday?'done':''}">
+        <div class="habit-icon-wrap" onclick="toggleHabit(${h.id})" style="cursor:pointer">${HICONS[h.type]||''}</div>
+        <div style="flex:1;cursor:pointer" onclick="toggleHabit(${h.id})">
+          <div class="habit-name">${h.name}</div>
+          <div class="habit-streak">${h.type} · ${h.streak||0} дней</div>
+        </div>
+        <button class="del-btn" onclick="deleteHabit(${h.id})" title="Удалить" style="font-size:13px">×</button>
+        <div class="habit-check" onclick="toggleHabit(${h.id})" style="cursor:pointer">${h.doneToday?CHECK_SVG:''}</div>
+      </div>`).join('')}</div>`;
+}
+
+function renderHabitsStats(ud) {
+  if (!ud) return;
+  const done=ud.habits.filter(h=>h.doneToday).length;
+  const total=ud.habits.length;
+  const maxStr=total?Math.max(...ud.habits.map(h=>h.streak||0)):0;
+  const avgStr=total?Math.round(ud.habits.reduce((a,h)=>a+(h.streak||0),0)/total):0;
+  el('habit-stats-grid').innerHTML=`
+    <div class="card card-bd"><div class="kpi-label">Выполнено</div><div class="kpi-value">${done}<span class="kpi-unit">/ ${total}</span></div><div class="kpi-delta">${total?Math.round(done/total*100):0}% сегодня</div></div>
+    <div class="card card-bd"><div class="kpi-label">Макс. серия</div><div class="kpi-value">${maxStr}<span class="kpi-unit">дн</span></div></div>
+    <div class="card card-bd"><div class="kpi-label">Средняя серия</div><div class="kpi-value">${avgStr}<span class="kpi-unit">дн</span></div></div>
+    <div class="card card-bd"><div class="kpi-label">Всего привычек</div><div class="kpi-value">${total}</div></div>
+  `;
+}
+
+// Функции для профиля
+function openProfileModal() {
+  const ud=getUserData();
+  if (!ud) return;
+
+  const p=ud.profile;
+  document.getElementById('prof-name').value=p.name||'';
+  document.getElementById('prof-weight').value=p.weight||'';
+  document.getElementById('prof-height').value=p.height||'';
+  document.getElementById('prof-age').value=p.age||'';
+  document.getElementById('prof-goal').value=p.goal||'strength';
+  document.getElementById('prof-sport').value=p.sport||'Фитнес';
+  document.getElementById('prof-freq').value=p.freq||'3';
+  el('profile-avatar-big').textContent=initials(p.name);
+  openModal('modal-profile');
+}
+
+function saveProfile() {
+  const ud=getUserData();
+  if (!ud) return;
+
+  ud.profile.name=document.getElementById('prof-name').value.trim()||ud.profile.name;
+  ud.profile.weight=parseFloat(document.getElementById('prof-weight').value)||ud.profile.weight;
+  ud.profile.height=parseFloat(document.getElementById('prof-height').value)||ud.profile.height;
+  ud.profile.age=parseInt(document.getElementById('prof-age').value)||ud.profile.age;
+  ud.profile.goal=document.getElementById('prof-goal').value;
+  ud.profile.sport=document.getElementById('prof-sport').value;
+  ud.profile.freq=document.getElementById('prof-freq').value;
+  saveUD(ud);
+  updateSidebarUser(ud);
+  closeModal(null,'modal-profile');
+  showToast('Профиль обновлён');
+  renderDashboard(ud);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════════════
+const PAGE_META={
+  dashboard:['Dashboard','Overview'],
+  workouts: ['Workouts','Тренировки и упражнения'],
+  progress: ['Progress','Аналитика и замеры'],
+  habits:   ['Habits','Ежедневные привычки'],
+};
+
+function goto(page,elNav) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(elNav)elNav.classList.add('active');
+  const[title,sub]=PAGE_META[page]||[page,''];
+  el('topbar-title').textContent=title;
+  el('topbar-sub').textContent=sub;
+  // refresh on navigate
+  const ud=getUserData();
+  if(!ud) return;
+
+  if(page==='dashboard')renderDashboard(ud);
+  if(page==='workouts'){renderExGrid(ud);renderHistory(ud);}
+  if(page==='progress'){renderProgress(ud);setTimeout(()=>{const m=[...ud.measurements].filter(m=>m.weight).sort((a,b)=>a.date.localeCompare(b.date));if(m.length>=2)renderWeightChart(m);},50);}
+  if(page==='habits')renderHabits(ud);
+}
+
+function switchTab(btn,paneId) {
+  const page=btn.closest('.page');
+  page.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const all=['wt-exercises','wt-history','pt-weight','pt-anthro','pt-strength','ht-today','ht-all','ht-stats'];
+  all.forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('active');});
+  const t=document.getElementById(paneId);
+  if(t)t.classList.add('active');
+  if(paneId==='pt-weight'){const ud=getUserData();if(!ud)return;const m=[...ud.measurements].filter(m=>m.weight).sort((a,b)=>a.date.localeCompare(b.date));if(m.length>=2)setTimeout(()=>renderWeightChart(m),50);}
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════════════════════════════
+function openModal(id) {
+  if(id==='modal-profile')openProfileModal();
+  else document.getElementById(id).classList.add('open');
+}
+
+function closeModal(e,id) {
+  if(e&&e.target!==document.getElementById(id))return;
+  document.getElementById(id).classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════════════
+function showToast(msg,type='ok') {
+  const t=document.getElementById('toast');
+  t.style.background=type==='err'?'var(--red)':'var(--t1)';
+  t.style.color=type==='err'?'#fff':'var(--bg)';
+  t.innerHTML=(type==='ok'?`<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="2,6 5,9 10,3"/></svg>`:'⚠')+msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════════════
+function el(id){return document.getElementById(id);}
+
+// ══════════════════════════════════════════════════════════════════════
+// ОСТАВШИЕСЯ ФУНКЦИИ ДЛЯ DASHBOARD
+// ══════════════════════════════════════════════════════════════════════
+function renderKPIs(ud) {
+  if (!ud) return;
+
+  // weight
+  const meas = ud.measurements;
+  if (meas.length > 0) {
+    const sorted = [...meas].sort((a,b)=>b.date.localeCompare(a.date));
+    const cur = sorted[0].weight;
+    el('dash-weight').innerHTML = cur+'<span class="kpi-unit">кг</span>';
+    if (sorted.length>1) {
+      const prev = sorted[sorted.length-1].weight;
+      const diff = (cur-prev).toFixed(1);
+      const cls = diff<0?'dn':'up';
+      el('dash-weight-delta').className='kpi-delta '+cls;
+      el('dash-weight-delta').textContent=(diff>0?'+':'')+diff+' кг всего';
+    } else {
+      el('dash-weight-delta').textContent='первый замер';
+    }
+  }
+
+  // workouts
+  const wl = ud.workoutLog;
+  el('dash-workouts-cnt').textContent = wl.length;
+  const thisWeek = getThisWeekWorkouts(ud);
+  el('dash-workouts-delta').textContent = thisWeek.length+' на этой неделе';
+
+  // tonnage
+  const ton = thisWeek.reduce((s,w)=>s+(w.tonnage||0),0);
+  el('dash-tonnage').innerHTML = ton>0?(ton/1000).toFixed(1)+'<span class="kpi-unit">т</span>':'—<span class="kpi-unit">т</span>';
+  el('dash-tonnage-delta').textContent = ton>0?'эта неделя':'нет тренировок';
+
+  // streak
+  const maxStreak = ud.habits.length>0?Math.max(...ud.habits.map(h=>h.streak||0)):0;
+  el('dash-streak').innerHTML = maxStreak+'<span class="kpi-unit">дн</span>';
+  el('dash-streak-delta').textContent = maxStreak>0?'максимальная серия':'добавьте привычки';
+}
+
+function renderScore(ud) {
+  if (!ud) return;
+
+  const wl = ud.workoutLog;
+  const freq = parseInt(ud.profile.freq)||3;
+  const thisWeek = getThisWeekWorkouts(ud);
+  const trainScore = Math.min(100, Math.round((thisWeek.length/freq)*100));
+  const habitsDone = ud.habits.filter(h=>h.doneToday).length;
+  const habitScore = ud.habits.length>0?Math.round((habitsDone/ud.habits.length)*100):0;
+  const recScore = Math.max(0, 100 - thisWeek.length*10);
+  const score = Math.round((trainScore*0.5)+(habitScore*0.3)+(recScore*0.2));
+
+  const statusMap = [
+    [0,'Нет данных'],[20,'Начало пути'],[40,'В процессе'],[60,'Хорошая форма'],[80,'Отличная форма'],[95,'Пиковая форма']
+  ];
+  let statusText='Нет данных';
+  for(const[min,label] of statusMap){if(score>=min)statusText=label;}
+
+  el('score-num').innerHTML = (score||0)+'<em>/ 100</em>';
+  el('score-badge').textContent = statusText;
+  setTimeout(()=>{el('score-fill').style.width=score+'%';},200);
+  el('sf-train').textContent=trainScore;
+  setTimeout(()=>el('sf-train-bar').style.width=trainScore+'%',200);
+  el('sf-habits').textContent=habitScore;
+  setTimeout(()=>el('sf-habits-bar').style.width=habitScore+'%',200);
+  el('sf-rec').textContent=recScore;
+  setTimeout(()=>el('sf-rec-bar').style.width=recScore+'%',200);
+
+  const lv = getLevelInfo(ud.xp);
+  el('xp-label').textContent='Уровень '+lv.lv+' — '+lv.name;
+  el('xp-pts').textContent=lv.xp+' / '+lv.next+' XP';
+  setTimeout(()=>el('xp-fill').style.width=lv.pct+'%',200);
+}
+
+function getThisWeekWorkouts(ud) {
+  if (!ud) return [];
+
+  const now = new Date();
+  const day = now.getDay()||7;
+  const mon = new Date(now);
+  mon.setDate(now.getDate()-day+1);
+  mon.setHours(0,0,0,0);
+  return ud.workoutLog.filter(w=>new Date(w.date+'T00:00:00')>=mon);
+}
+
+function renderWeekGrid(ud) {
+  if (!ud) return;
+
+  const days=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  const now=new Date(); const dow=now.getDay()||7;
+  const mon=new Date(now); mon.setDate(now.getDate()-dow+1); mon.setHours(0,0,0,0);
+  const weekDates=Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d.toISOString().slice(0,10);});
+  const byDate={};
+  ud.workoutLog.forEach(w=>{if(!byDate[w.date])byDate[w.date]=0;byDate[w.date]++;});
+  const todayI=dow-1;
+  const freq=parseInt(ud.profile.freq)||3;
+  const thisWeek=getThisWeekWorkouts(ud);
+  el('week-label').textContent=thisWeek.length+' / '+freq+' сессий';
+  el('week-cnt').textContent=thisWeek.length;
+  const totalTime=thisWeek.reduce((s,w)=>s+(w.duration||0),0);
+  el('week-time').textContent=(totalTime/60).toFixed(1)+' ч';
+  const totalTon=thisWeek.reduce((s,w)=>s+(w.tonnage||0),0);
+  el('week-ton').textContent=(totalTon/1000).toFixed(1)+' т';
+  el('week-grid').innerHTML=weekDates.map((date,i)=>{
+    const cnt=byDate[date]||0;
+    const h=cnt?100:0;
+    return`<div class="week-col ${cnt?'trained':''} ${i===todayI?'today':''}">
+      <div class="week-bar-track"><div class="week-bar-prog" style="height:${h}%"></div></div>
+      <span class="week-lbl">${days[i]}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderTodayEx(ud) {
+  if (!ud) return;
+
+  const wrap = el('today-exercises-wrap');
+  const today = ud.workoutLog.filter(w=>w.date===todayStr());
+  if (today.length===0) {
+    wrap.innerHTML=`<div class="empty"><div class="empty-icon">🏋️</div><p>Тренировка ещё не записана</p><button class="btn btn-primary btn-sm" onclick="openModal('modal-log-workout')">+ Записать</button></div>`;
+    return;
+  }
+  const w=today[today.length-1];
+  wrap.innerHTML=`
+    <div style="margin-bottom:8px;font-size:13px;font-weight:600;color:var(--t1)">${w.name}</div>
+    <table class="exercise-table">
+      ${w.sets.map((s,i)=>`<tr>
+        <td class="ex-num">${String(i+1).padStart(2,'0')}</td>
+        <td class="ex-name-cell">${s.name}</td>
+        <td class="ex-sets-cell">${s.s}×${s.r}${s.w?'·'+s.w+'кг':''}</td>
+      </tr>`).join('')}
+    </table>
+    <div class="workout-footer">
+      <div class="wf-stat"><div class="wf-num">${w.sets.length}</div><div class="wf-lbl">упражнений</div></div>
+      <div class="wf-stat"><div class="wf-num">${w.duration||'—'}</div><div class="wf-lbl">минут</div></div>
+      <div class="wf-stat"><div class="wf-num">${((w.tonnage||0)/1000).toFixed(1)}</div><div class="wf-lbl">тонн</div></div>
+    </div>`;
+}
+
+function renderDashHabits(ud) {
+  if (!ud) return;
+
+  const list = el('dash-habits-list');
+  if (ud.habits.length===0) {
+    list.innerHTML=`<div class="empty" style="padding:20px 0"><p>Добавьте первую привычку</p></div>`;
+    el('habit-progress-lbl').textContent='0 / 0';
+    return;
+  }
+  const done=ud.habits.filter(h=>h.doneToday).length;
+  const pct=Math.round(done/ud.habits.length*100);
+  el('habit-progress-lbl').textContent=done+' / '+ud.habits.length;
+  el('habit-progress-bar').style.width=pct+'%';
+  list.innerHTML=ud.habits.slice(0,6).map(h=>`
+    <div class="habit-row ${h.doneToday?'done':''}" onclick="toggleHabit(${h.id})">
+      <div class="habit-icon-wrap">${HICONS[h.type]||''}</div>
+      <div style="flex:1"><div class="habit-name">${h.name}</div><div class="habit-streak">${h.streak||0} дней подряд</div></div>
+      <div class="habit-check">${h.doneToday?CHECK_SVG:''}</div>
+    </div>`).join('');
+}
+
+function renderDashRecords(ud) {
+  if (!ud) return;
+
+  const wrap = el('dash-records-wrap');
+  const recs = Object.entries(ud.records);
+  if (recs.length===0) {
+    wrap.innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>Рекорды появятся после первых тренировок</p></div>`;
+    return;
+  }
+  wrap.innerHTML=`<table class="rec-table">${recs.slice(0,5).map(([name,r])=>`
+    <tr>
+      <td class="rec-name">${name}</td>
+      <td class="rec-val">${r.weight}кг×${r.reps}</td>
+      <td style="width:48px;text-align:right">${r.isNew?'<span class="rec-badge">PR</span>':''}</td>
+    </tr>`).join('')}</table>`;
+}
+
+function renderAITip(ud) {
+  if (!ud) return;
+
+  const wl=ud.workoutLog; const freq=parseInt(ud.profile.freq)||3;
+  const thisWeek=getThisWeekWorkouts(ud);
+  const done=ud.habits.filter(h=>h.doneToday).length;
+  let tip='Добро пожаловать в Athlete OS. Начните с добавления первой тренировки и привычек.';
+  if (wl.length>=3) {
+    const tons=thisWeek.map(w=>w.tonnage||0);
+    const avgTon=tons.length?tons.reduce((a,b)=>a+b,0)/tons.length:0;
+    if (thisWeek.length>=freq) tip=`<strong>Отличная неделя.</strong> Вы выполнили план — ${thisWeek.length} тренировок. Убедитесь, что выделяете время на восстановление.`;
+    else if (thisWeek.length===0) tip=`<strong>Начните неделю.</strong> Запишите первую тренировку — любая активность лучше, чем её отсутствие.`;
+    else tip=`До конца плана осталось ${freq-thisWeek.length} тренировок. Вы на правильном пути.`;
+  }
+  if (ud.habits.length>0&&done===ud.habits.length) tip=`<strong>Все привычки выполнены.</strong> Отличный день — 100% привычек закрыты. Поддерживайте серию.`;
+  el('ai-text').innerHTML=tip;
+}
+</script>
+</body>
+</html>
+```
